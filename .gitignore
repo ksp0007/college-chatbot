@@ -1,4 +1,6 @@
-# Byte-compiled / optimized / DLL files
+# ------------------------
+# Python
+# ------------------------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -9,8 +11,30 @@ venv/
 # Environment variables
 .env
 
-# VS Code
-.vscode/
+# SQLite database
+*.db
 
-# MacOS metadata
+# Python cache
+*.pyo
+*.pyd
+
+# ------------------------
+# Node / React
+# ------------------------
+frontend/node_modules/
+node_modules/
+
+# Build files
+frontend/build/
+
+# ------------------------
+# IDE
+# ------------------------
+.vscode/
+.idea/
+
+# ------------------------
+# OS
+# ------------------------
 .DS_Store
+Thumbs.db

@@ -6,6 +6,8 @@ groq
 tavily-python
 tiktoken
 chromadb
-
-
-
+pandas
+numpy
+faiss-cpu
+sentence-transformers
+requests

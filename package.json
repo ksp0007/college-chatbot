@@ -1,0 +1,11 @@
+{
+  "name": "chatbot-root",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm start --prefix frontend\" \"uvicorn app.main:app --reload --reload-dir app\""
+
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

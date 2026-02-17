@@ -6,23 +6,26 @@ from groq import Groq
 from tavily import TavilyClient
 from sentence_transformers import SentenceTransformer
 
+# Load env vars
 load_dotenv()
 
-# Load local sentence embedding model
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")  # lightweight & fast
+# ---- Embeddings ----
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")  # fast, local embeddings
 
-# Tavily client
+# ---- Tavily Web Search ----
 tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
-# Constants
+# ---- Constants ----
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 100
 
+
 def search_web(query):
     results = tavily_client.search(query=query, max_results=1)
-    if results and results["results"]:
+    if results and results.get("results"):
         return results["results"][0]["content"]
     return "Sorry, I couldn't find any information on the web."
+
 
 def load_and_split(path):
     with open(path, "r", encoding="utf-8") as f:
@@ -34,9 +37,10 @@ def load_and_split(path):
         chunks.append(chunk)
     return chunks
 
-# Use real local semantic embedding
+
 def get_embedding(text):
     return embedding_model.encode(text).astype("float32")
+
 
 def build_index(chunks):
     dim = get_embedding("test").shape[0]
@@ -45,10 +49,12 @@ def build_index(chunks):
     index.add(np.array(vectors))
     return index, vectors
 
-def retrieve(query, chunks, index, vectors, k=3):
+
+def retrieve(query, chunks, index, vectors, k=15):
     query_vec = get_embedding(query).reshape(1, -1)
     _, I = index.search(query_vec, k)
     return [chunks[i] for i in I[0]]
+
 
 def ask_llm(context_chunks, query):
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -60,18 +66,20 @@ def ask_llm(context_chunks, query):
         "If the answer is not found, respond with: 'Not found in the provided data.'"
     )
 
-    prompt = "The following is a structured list of designations and names. Use it to answer questions.\n\n"
+    # Build user content with chunks
+    prompt = "The following is structured context. Use it to answer.\n\n"
     for i, chunk in enumerate(context_chunks):
-        prompt += f"Chunk {i + 1}:\n{chunk}\n\n"
+        prompt += f"Chunk {i+1}:\n{chunk}\n\n"
     prompt += f"Question: {query}\nAnswer:"
 
     response = client.chat.completions.create(
-        model=os.getenv("LLM_MODEL"),
+        model="llama-3.1-8b-instant",   # ✅ stable model
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
         ]
     )
+
     return response.choices[0].message.content.strip()
 
 
@@ -84,8 +92,8 @@ def run_rag_pipeline(user_query):
     top_chunks = retrieve(user_query, chunks, index, vectors)
     answer = ask_llm(top_chunks, user_query)
 
-    if answer.lower().startswith("not found") or "could not find" in answer.lower():
+    if answer.lower().startswith("not found"):
         web_answer = search_web(user_query)
-        return f"(From web search)\n{web_answer}"
+        return f"{web_answer}"
 
     return answer

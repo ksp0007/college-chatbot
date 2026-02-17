@@ -1,0 +1,5 @@
+# To Run Project
+
+1.venv\Scripts\activate 
+
+2.npm run dev
